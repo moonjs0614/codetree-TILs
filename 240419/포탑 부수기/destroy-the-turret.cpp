@@ -60,6 +60,10 @@ Turret select_attacker() // 공격자 탐색
                 }
                 v.push_back(t); // 벡터에 최저값 포탑 담기
             }
+            else if (t.power == min_power)
+            {
+                v.push_back(t); // 벡터에 최저값 포탑 담기
+            }
         }
     }
 
@@ -79,15 +83,22 @@ Turret select_attacker() // 공격자 탐색
         for (int i = 0; i < v.size(); i++)
         {
             Turret t = v[i]; // 현재 포탑
-            if (recently_attack > action_time - t.attack_time); // 현재 포탑이 가장 최근에 공격했었다면
+            if (recently_attack > action_time - t.attack_time) // 현재 포탑이 가장 최근에 공격했었다면
             {
                 if (max_yx < t.y + t.x) // 현재 포탑의 y + x 가 max y+x 보다 크다면
                 {
                     if (max_y < t.y) // 현재 포탑의 열이 max y 보다 크다면
                     {
+                        max_y = t.y;
                         min_t = t;
+                        continue;
                     }
+                    max_yx = t.y + t.x;
+                    min_t = t;
+                    continue;
                 }
+                recently_attack = action_time - t.attack_time;
+                min_t = t;
             }
         }
         map[min_t.y][min_t.x].power += (N + M);
@@ -118,7 +129,10 @@ Turret select_target(Turret attacker) // 공격 대상 탐색
                 {
                     v.clear(); // 벡터 비우기
                 }
-
+                v.push_back(t); // 벡터에 최대값 포탑 담기
+            }
+            else if (t.power == max_power)
+            {
                 v.push_back(t); // 벡터에 최대값 포탑 담기
             }
         }
@@ -139,15 +153,22 @@ Turret select_target(Turret attacker) // 공격 대상 탐색
         for (int i = 0; i < v.size(); i++)
         {
             Turret t = v[i]; // 현재 포탑
-            if (oldest_attack < action_time - t.attack_time); // 현재 포탑이 가장 오래 전에 공격했었다면
+            if (oldest_attack < action_time - t.attack_time) // 현재 포탑이 가장 오래 전에 공격했었다면
             {
+                oldest_attack = action_time - t.attack_time;
                 if (min_yx > t.y + t.x) // 현재 포탑의 y + x 가 min y + x 보다 작다면
                 {
+                    min_yx = t.y + t.x;
                     if (min_y > t.y) // 현재 포탑의 열이 min_y 보다 작다면
                     {
+                        min_y = t.y;
                         max_t = t;
+                        continue;
                     }
+                    max_t = t;
+                    continue;
                 }
+                max_t = t;
             }
         }
         return max_t;
@@ -241,6 +262,8 @@ void shell(Turret attacker, Turret target) // 포탄 공격
         if (nx > M) nx = 1; // 좌우도 마찬가지
         if (nx < 1) nx = N;
 
+        if (ny == attacker.y && nx == attacker.x) continue; // 공격자면 제외
+
         map[ny][nx].power -= attacker.power / 2;
     }
 
@@ -308,6 +331,7 @@ void solution()
 {
     for (int action = 1; action <= K; action++) // K만큼 반복
     {
+
         path.clear(); // 공격 경로 초기화
         Turret attacker = select_attacker(); // 공격자 탐색
         Turret target = select_target(attacker);// 공격 대상 탐색
