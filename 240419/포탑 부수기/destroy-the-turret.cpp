@@ -85,19 +85,19 @@ Turret select_attacker() // 공격자 탐색
             Turret t = v[i]; // 현재 포탑
             if (recently_attack > action_time - t.attack_time) // 현재 포탑이 가장 최근에 공격했었다면
             {
+                recently_attack = action_time - t.attack_time;
                 if (max_yx < t.y + t.x) // 현재 포탑의 y + x 가 max y+x 보다 크다면
                 {
+                    max_yx = t.y + t.x;
                     if (max_y < t.y) // 현재 포탑의 열이 max y 보다 크다면
                     {
                         max_y = t.y;
                         min_t = t;
                         continue;
                     }
-                    max_yx = t.y + t.x;
                     min_t = t;
                     continue;
                 }
-                recently_attack = action_time - t.attack_time;
                 min_t = t;
             }
         }
@@ -230,18 +230,6 @@ bool laser(Turret attacker, Turret target) // 레이저 공격 BFS
         //역순으로 저장된 경로를 뒤집어서 출발지 ~ 목적지 최단경로 얻음
         reverse(path.begin(), path.end());
 
-        // 공격 처리
-        for (int i = 0; i < path.size(); i++)
-        {
-            Turret now = path[i];
-            if (now.y == target.y && now.x == target.x) // target 포탑이면
-            {
-                map[target.y][target.x].power -= attacker.power;
-            }
-            else // 경로상의 포탑이면
-            map[now.y][now.x].power -= (attacker.power / 2);
-        }
-
         return true;
     }
     else
@@ -260,10 +248,10 @@ void shell(Turret attacker, Turret target) // 포탄 공격
         if (ny > N) ny = 1; // 레이저가 맵 최하단을 넘어가면 최상단으로 이동
         if (ny < 1) ny = N; // 레이저가 맵 최상단을 넘어가면 최하단으로 이동
         if (nx > M) nx = 1; // 좌우도 마찬가지
-        if (nx < 1) nx = N;
+        if (nx < 1) nx = M;
 
         if (ny == attacker.y && nx == attacker.x) continue; // 공격자면 제외
-
+        if (map[ny][nx].power == 0) continue; // 이미 부서진 포탑이면 제외
         map[ny][nx].power -= attacker.power / 2;
     }
 
@@ -294,6 +282,7 @@ void maintenance_laser(Turret attacker) // 레이저 공격 성공시 포탑 정
         {
             int flag = 0;
             if (map[i][j].power == 0) continue; // 부서진 포탑이면 continue
+            if (i == attacker.y && j == attacker.x) continue; // 공격자이면 continue
             
             for (int k = 0; k < path.size(); k++)
             {
@@ -305,7 +294,7 @@ void maintenance_laser(Turret attacker) // 레이저 공격 성공시 포탑 정
                 }
             }
 
-            if (flag != 1 && (i != attacker.y && j != attacker.x))
+            if (flag == 0)
             {
                 map[i][j].power++;
             }
@@ -327,6 +316,20 @@ void maintenance_shell(Turret attacker, Turret target) // 포탄 공격 후 포�
     }
 }
 
+int check_remain()
+{
+    int cnt = 0;
+    for (int i = 1; i <= N; i++)
+    {
+        for (int j = 1; j <= M; j++)
+        {
+            if (map[i][j].power > 0) cnt++;
+        }
+    }
+
+    return cnt;
+}
+
 void solution()
 {
     for (int action = 1; action <= K; action++) // K만큼 반복
@@ -336,18 +339,41 @@ void solution()
         Turret attacker = select_attacker(); // 공격자 탐색
         Turret target = select_target(attacker);// 공격 대상 탐색
 
+        if (action == 2)
+        {
+            int de = -1;
+        }
+
         if (!laser(attacker, target)) // 레이저 공격이 실패했다면
         {
             shell(attacker, target); // 포탄 공격
+            map[attacker.y][attacker.x].attack_time = action_time; // 공격자의 공격 시간을 현재로 갱신
             fracture(); // 부서짐 처리. 0보다 작거나 같으면 전부 0으로 맞춰줌
             maintenance_shell(attacker, target); // 포탑 정비
         }
         else // 레이저 공격이 성공했다면
         {
+            // 공격 처리
+            for (int i = 0; i < path.size(); i++)
+            {
+                Turret now = path[i];
+                if (now.y == target.y && now.x == target.x) // target 포탑이면
+                {
+                    map[target.y][target.x].power -= attacker.power;
+                }
+                else // 경로상의 포탑이면
+                    map[now.y][now.x].power -= (attacker.power / 2);
+            }
             map[attacker.y][attacker.x].attack_time = action_time; // 공격자의 공격 시간을 현재로 갱신
 
             fracture(); // 부서짐 처리. 0보다 작거나 같으면 전부 0으로 맞춰줌
             maintenance_laser(attacker); // 포탑 정비
+        }
+
+        int remain = check_remain();
+        if (remain == 1)
+        {
+            break;
         }
     }
 }
