@@ -96,7 +96,7 @@ Turret select_attacker() // 공격자 탐색
     }
 }
 
-Turret select_target() // 공격 대상 탐색
+Turret select_target(Turret attacker) // 공격 대상 탐색
 {
     Turret max_t;
     int max_power = -1;
@@ -108,6 +108,7 @@ Turret select_target() // 공격 대상 탐색
         {
             Turret t = map[i][j];
             if (t.power == 0) continue;
+            if (t.y == attacker.y && t.x == attacker.x) continue;
             if (t.power > max_power)
             {
                 max_power = t.power; // 최대값 갱신
@@ -307,13 +308,9 @@ void solution()
 {
     for (int action = 1; action <= K; action++) // K만큼 반복
     {
-        if (action == 2)
-        {
-            int de = 1;
-        }
         path.clear(); // 공격 경로 초기화
         Turret attacker = select_attacker(); // 공격자 탐색
-        Turret target = select_target();// 공격 대상 탐색
+        Turret target = select_target(attacker);// 공격 대상 탐색
 
         if (!laser(attacker, target)) // 레이저 공격이 실패했다면
         {
