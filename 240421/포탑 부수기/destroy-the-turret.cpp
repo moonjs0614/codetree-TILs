@@ -9,7 +9,6 @@ using namespace std;
 int N, M, K;
 int dy[8] = { 0, 1, 0, -1, -1, 1, 1, -1 };
 int dx[8] = { 1, 0, -1, 0, 1, 1, -1, -1 };
-int action_time = 1;
 struct Turret
 {
     int y, x;
@@ -247,6 +246,7 @@ void shell(Turret attacker, Turret target) // 포탄 공격
         if (nx < 1) nx = M;
 
         if (ny == attacker.y && nx == attacker.x) continue; // 공격자면 제외
+        path.push_back(map[ny][nx]);
         if (map[ny][nx].power == 0) continue; // 이미 부서진 포탑이면 제외
         map[ny][nx].power -= attacker.power / 2;
     }
@@ -304,10 +304,25 @@ void maintenance_shell(Turret attacker, Turret target) // 포탄 공격 후 포�
     {
         for (int j = 1; j <= M; j++)
         {
-            if (i == attacker.y && j == attacker.x) continue;
-            if (i >= target.y - 1 || i <= target.y + 1 || j <= target.x + 1 || j >= target.x - 1) continue; // target 포함해서 주변의 공격받은 포탑들 제외
+            int flag = 1;
+            Turret now = map[i][j];
+            if (map[now.y][now.x].power == 0) continue;
+            if (now.y == attacker.y && now.x == attacker.x) continue;
+            if (now.y == target.y && now.x == target.x)  continue;
+            
+            for (int k = 0; k < path.size(); k++)
+            {
+                if (now.y == path[k].y && now.x == path[k].x)
+                {
+                    flag = 0;
+                    break;
+                }
+            }
 
-            map[i][j].power++;
+            if (flag)
+            {
+                map[now.y][now.x].power++;
+            }
         }
     }
 }
@@ -334,7 +349,7 @@ void solution()
         Turret attacker = select_attacker(); // 공격자 탐색
         Turret target = select_target(attacker);// 공격 대상 탐색
 
-        if (action == 2)
+        if (action == 4)
         {
             int de = -1;
         }
@@ -342,20 +357,24 @@ void solution()
         if (!laser(attacker, target)) // 레이저 공격이 실패했다면
         {
             shell(attacker, target); // 포탄 공격
-            map[attacker.y][attacker.x].attack_time = action_time; // 공격자의 공격 시간을 현재로 갱신
+            map[attacker.y][attacker.x].attack_time = action; // 공격자의 공격 시간을 현재로 갱신
             fracture(); // 부서짐 처리. 0보다 작거나 같으면 전부 0으로 맞춰줌
             maintenance_shell(attacker, target); // 포탑 정비
         }
         else // 레이저 공격이 성공했다면
         {
             // 공격 처리
-            for (int i = 0; i < path.size() - 1; i++)
+            for (int i = 0; i < path.size(); i++)
             {
                 Turret now = path[i];
+                if (now.y == target.y && now.x == target.x)
+                {
+                    map[target.y][target.x].power -= attacker.power;
+                    continue;
+                }
                 map[now.y][now.x].power -= (attacker.power / 2);
             }
-            map[target.y][target.x].power -= attacker.power;
-            map[attacker.y][attacker.x].attack_time = action_time; // 공격자의 공격 시간을 현재로 갱신
+            map[attacker.y][attacker.x].attack_time = action; // 공격자의 공격 시간을 현재로 갱신
 
             fracture(); // 부서짐 처리. 0보다 작거나 같으면 전부 0으로 맞춰줌
             maintenance_laser(attacker); // 포탑 정비
