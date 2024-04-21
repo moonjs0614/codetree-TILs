@@ -29,7 +29,7 @@ bool cmp_attacker(Turret a, Turret b)
         }
         else if ((a.y + a.x) == (b.y + b.x))
         {
-            if (a.y > b.y)
+            if (a.x > b.x)
             {
                 return true;
             }
@@ -51,7 +51,7 @@ bool cmp_target(Turret a, Turret b)
         }
         else if ((a.y + a.x) == (b.y + b.x))
         {
-            if (a.y < b.y)
+            if (a.x < b.x)
             {
                 return true;
             }
@@ -349,7 +349,7 @@ void solution()
         Turret attacker = select_attacker(); // 공격자 탐색
         Turret target = select_target(attacker);// 공격 대상 탐색
 
-        if (action == 2)
+        if (action == 8)
         {
             int de = -1;
         }
