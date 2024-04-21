@@ -205,7 +205,7 @@ bool laser(Turret attacker, Turret target) // 레이저 공격 BFS
             if (map[ny][nx].power == 0) continue;
 
             visited[ny][nx] = 1;
-            int idx = ny * N - (N - nx);
+            int idx = ny * M - (M - nx);
             parent[idx] = now;
             q.push(map[ny][nx]);
         }
@@ -218,7 +218,7 @@ bool laser(Turret attacker, Turret target) // 레이저 공격 BFS
         while (now.y != attacker.y || now.x != attacker.x)
         {
             path.push_back(now);
-            int idx = now.y * N - (N - now.x);
+            int idx = now.y * M - (M - now.x);
             now = parent[idx];
         }
 
@@ -349,7 +349,7 @@ void solution()
         Turret attacker = select_attacker(); // 공격자 탐색
         Turret target = select_target(attacker);// 공격 대상 탐색
 
-        if (action == 4)
+        if (action == 2)
         {
             int de = -1;
         }
