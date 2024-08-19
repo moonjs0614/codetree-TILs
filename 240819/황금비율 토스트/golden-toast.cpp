@@ -80,34 +80,32 @@ public:
         temp->next->prev = temp;
     }
 
-    // 헤드 삭제
-    void deleteHead()
-    {
-        node* temp = head;
-        head->next->prev = NULL;
-        head = head->next;
-
-        delete temp;
-    }
-
-    // 중간 노드 삭제
+    // 노드 삭제
     void deleteNode(node* prevNode)
     {
+        // 만약 삭제되는 노드가 헤드면
+        if (idx == 0)
+        {
+            head->next->prev = NULL;
+            head = head->next;
+
+            return;
+        }
         node* temp = prevNode->next;
 
-        prevNode->next = temp->next;
-        prevNode->next->prev = prevNode;
+        // 만약 삭제되는 노드가 테일이면
+        if (temp == tail)
+        {
+            prevNode->next = NULL;
+            tail = prevNode;
+        }
+        // 삭제되는 노드가 테일이 아니면
+        else
+        {
+            prevNode->next = temp->next;
+            prevNode->next->prev = prevNode;
+        }
         
-        delete temp;
-    }
-
-    // 테일 삭제
-    void deleteTail()
-    {
-        node* temp = tail;
-        tail->prev->next = NULL;
-        tail = tail->prev;
-
         delete temp;
     }
 
@@ -158,6 +156,7 @@ void input()
 int main() {
     //freopen("sample.txt", "r", stdin);
     input();
+    node* cursor = a.getTail();
 
     for (int i = 0; i < m; i++)
     {
@@ -166,88 +165,37 @@ int main() {
         if (cmd == 'L')
         {
             idx--;
+            if (idx < 0)
+            {
+                cursor = a.getHead();
+                idx = 0;
+            }
+            else
+            {
+                cursor = cursor->prev;
+            }
+        }
+        else if (cmd == 'R')
+        {
+            idx++;
+            cursor = cursor->next;
         }
         else if (cmd == 'P')
         {
             char data;
             cin >> data;
 
-            if (idx == 0)
-            {
-                a.addFrontNode(data);
-            }
-            else if (idx == Size)
-            {
-                a.addNode(data);
-            }
-            else
-            {
-                if (idx >= Size / 2)
-                {
-                    node* t = a.getTail();
-
-                    for (int i = 1; i <= Size - idx; i++)
-                    {
-                        t = t->prev;
-                    }
-                    a.insertNode(t, data);
-                }
-                else
-                {
-                    node* t = a.getHead();
-                    for (int i = 1; i < idx; i++)
-                    {
-                        t = t->next;
-                    }
-
-                    a.insertNode(t, data);
-                }
-                idx++;
-                Size++;
-            }
-        }
-        else if (cmd == 'R')
-        {
-            idx++;
+            a.insertNode(cursor, data);
+            cursor = cursor->next;
         }
         else if (cmd == 'D')
         {
-            if (idx == 0)
-            {
-                a.deleteHead();
-            }
-            else if (idx == Size)
+            node* temp = a.getTail();
+            if (cursor == temp)
             {
                 continue;
             }
-            else if (idx == Size - 1)
-            {
-                a.deleteTail();
-            }
-            else
-            {
-                if (idx >= Size / 2)
-                {
-                    node* t = a.getTail();
-
-                    for (int i = 1; i <= Size - idx; i++)
-                    {
-                        t = t->prev;
-                    }
-                    a.deleteNode(t);
-                }
-                else
-                {
-                    node* t = a.getHead();
-
-                    for (int i = 1; i < idx; i++)
-                    {
-                        t = t->next;
-                    }
-                    a.deleteNode(t);
-                }
-                Size--;
-            }
+            a.deleteNode(cursor);
         }
     }
 
