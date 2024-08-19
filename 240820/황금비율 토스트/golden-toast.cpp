@@ -71,11 +71,21 @@ public:
 
         temp->data = c;
 
-        temp->prev = prevNode;
-        temp->next = prevNode->next;
+        if (prevNode != tail)
+        {
+            temp->prev = prevNode;
+            temp->next = prevNode->next;
 
-        prevNode->next = temp;
-        temp->next->prev = temp;
+            prevNode->next = temp;
+            temp->next->prev = temp;
+        }
+        else if (prevNode == tail)
+        {
+            temp->prev = prevNode;
+            prevNode->next = temp;
+
+            tail = temp;
+        }
     }
 
     // 노드 삭제
