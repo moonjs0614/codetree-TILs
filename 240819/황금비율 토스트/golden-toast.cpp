@@ -4,8 +4,6 @@ using namespace std;
 
 int n, m;
 char cmd;
-int idx = 0;
-int Size = 0;
 
 struct node
 {
@@ -83,11 +81,12 @@ public:
     // 노드 삭제
     void deleteNode(node* prevNode)
     {
-        // 만약 삭제되는 노드가 헤드면
-        if (idx == 0)
+        if (prevNode == head)
         {
-            head->next->prev = NULL;
-            head = head->next;
+            head = prevNode->next;
+            head->prev = NULL;
+
+            delete prevNode;
 
             return;
         }
@@ -148,8 +147,6 @@ void input()
         cin >> data;
 
         a.addNode(data);
-        idx++;
-        Size++;
     }
 }
 
@@ -164,20 +161,16 @@ int main() {
 
         if (cmd == 'L')
         {
-            idx--;
-            if (idx < 0)
-            {
-                cursor = a.getHead();
-                idx = 0;
-            }
-            else
-            {
-                cursor = cursor->prev;
-            }
+            node* temp = a.getHead();
+            if (cursor == temp) continue;
+
+            cursor = cursor->prev;
         }
         else if (cmd == 'R')
         {
-            idx++;
+            node* temp = a.getTail();
+            if (cursor == temp) continue;
+
             cursor = cursor->next;
         }
         else if (cmd == 'P')
@@ -191,10 +184,8 @@ int main() {
         else if (cmd == 'D')
         {
             node* temp = a.getTail();
-            if (cursor == temp)
-            {
-                continue;
-            }
+            if (cursor == temp) continue;
+
             a.deleteNode(cursor);
         }
     }
