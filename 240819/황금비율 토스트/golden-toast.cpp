@@ -81,7 +81,8 @@ public:
     // 노드 삭제
     void deleteNode(node* prevNode)
     {
-        if (prevNode == head)
+        // 만약 삭제되는 노드가 헤드이면
+        if (prevNode == head->prev)
         {
             head = prevNode->next;
             head->prev = NULL;
