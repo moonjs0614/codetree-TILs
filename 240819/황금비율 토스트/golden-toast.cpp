@@ -117,6 +117,12 @@ public:
         return head;
     }
 
+    // 마지막 노드 가져오기
+    node* getTail()
+    {
+        return tail;
+    }
+
     // LinkedList 출력
     void display(node* head)
     {
@@ -176,14 +182,28 @@ int main() {
             }
             else
             {
-                node* t = a.getHead();
-                for (int i = 1; i < idx; i++)
+                if (idx >= Size / 2)
                 {
-                    t = t->next;
-                }
+                    node* t = a.getTail();
 
-                a.insertNode(t, data);
+                    for (int i = 1; i <= Size - idx; i++)
+                    {
+                        t = t->prev;
+                    }
+                    a.insertNode(t, data);
+                }
+                else
+                {
+                    node* t = a.getHead();
+                    for (int i = 1; i < idx; i++)
+                    {
+                        t = t->next;
+                    }
+
+                    a.insertNode(t, data);
+                }
                 idx++;
+                Size++;
             }
         }
         else if (cmd == 'R')
@@ -198,16 +218,35 @@ int main() {
             }
             else if (idx == Size)
             {
+                continue;
+            }
+            else if (idx == Size - 1)
+            {
                 a.deleteTail();
             }
             else
             {
-                node* t = a.getHead();
-                for (int i = 1; i < idx; i++)
+                if (idx >= Size / 2)
                 {
-                    t = t->next;
+                    node* t = a.getTail();
+
+                    for (int i = 1; i <= Size - idx; i++)
+                    {
+                        t = t->prev;
+                    }
+                    a.deleteNode(t);
                 }
-                a.deleteNode(t);
+                else
+                {
+                    node* t = a.getHead();
+
+                    for (int i = 1; i < idx; i++)
+                    {
+                        t = t->next;
+                    }
+                    a.deleteNode(t);
+                }
+                Size--;
             }
         }
     }
