@@ -1,212 +1,268 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
-#include <cmath>
+#include <queue>
 #include <algorithm>
-#include <vector>
+#include <string>
 using namespace std;
 
 int N, M, K;
-int Ex, Ey;
-int Map[11][11];
+string map[11][11];
+int min_dist = 100;
+int square_len;
+int runner_cnt;
+int sum = 0;
 
-int Ans = 0;
+int dy[4] = { -1, 1, 0, 0 };
+int dx[4] = { 0, 0, -1, 1 };
 
-int dx[4] = { 1, -1, 0, 0 };
-int dy[4] = { 0, 0, 1, -1 };
-
-struct Person {
-    int x;
-    int y;
+struct Point
+{
+	int y, x;
+	int move_time = 0;
+	int move_dist = 0;
+	int exit_dist = 0;
 };
 
-struct Position {
-    int x;
-    int y;
-    int Size;
+bool cmp(Point a, Point b)
+{
+	if (a.exit_dist == b.exit_dist)
+	{
+		if (a.x == b.x)
+		{
+			return a.y < b.y;
+		}
+		return a.x < b.x;
+	}
+	return a.exit_dist < b.exit_dist;
 };
 
-vector<Person> Vector;
-vector<Position> Data;
+Point runners[10];
+Point Exit;
 
-void Input() {
-    cin >> N >> M >> K;
-    for (int i = 1; i <= N; i++)
-    {
-        for (int j = 1; j <= N; j++)
-        {
-            cin >> Map[i][j];
-        }
-    }
+vector<Point> square;
 
-    int X;
-    int Y;
-    for (int i = 1; i <= M; i++)
-    {
-        cin >> X >> Y;
-        Vector.push_back({ X, Y });
-    }
+void input()
+{
+	cin >> N >> M >> K;
+	
+	for (int i = 1; i <= N; i++)
+	{
+		for (int j = 1; j <= N; j++)
+		{
+			cin >> map[i][j];
+		}
+	}
 
-    cin >> Ex >> Ey;
+	int y, x;
+	for (int i = 0; i < M; i++)
+	{
+		cin >> y >> x;
+		map[y][x] = "A";
+		runners[i] = { y, x };
+	}
+	cin >> y >> x;
+	map[y][x] = "E";
+	Exit = { y, x };
 }
 
+void move(int time)
+{
+	for (int i = 0; i < M; i++)
+	{
+		Point runner = runners[i];
+		
+		// 이번에 이동할 차례가 아니면 패스
+		if (runner.move_time != time) continue;
 
-// 해당 좌표에서 출구까지의 거리
-int Dist_Exit(int x, int y) {
-    return abs(x - Ex) + abs(y - Ey);
+		runner.exit_dist = abs(Exit.y - runner.y) + abs(Exit.x - runner.x);
+		bool flag = false;
+		bool escape = false;
+		Point next = { 0, 0, runner.move_time, runner.move_dist, runner.move_time };
+
+		// 이동 가능한 칸 탐색
+		for (int j = 0; j < 4; j++)
+		{
+			next.y = runner.y + dy[j];
+			next.x = runner.x + dx[j];
+
+			// 다음이 출구면
+			if (map[next.y][next.x] == "E")
+			{
+				map[runner.y][runner.x] = "0";
+				escape = true;
+				runner.move_dist++;
+				runner.move_time = 1000;
+				runner_cnt--;
+				sum++;
+				break;
+			}
+
+			next.exit_dist = abs(Exit.y - next.y) + abs(Exit.x - next.x);
+
+			if (next.y < 1 || next.y > N || next.x < 1 || next.x > N) continue;
+			if (map[next.y][next.x] != "0") continue;
+			if (runner.exit_dist <= next.exit_dist) continue;
+
+			flag = true;
+			break;
+		}
+
+		// 탈출했으면 패스
+		if (escape) continue;
+
+		// 이동 가능한 칸이 존재하면
+		if (flag)
+		{
+			map[runner.y][runner.x] = "0";
+			if (map[next.y][next.x] == "0")
+			{
+				map[next.y][next.x] = "A";
+			}
+			else
+			{
+				map[next.y][next.x] += "A";
+			}
+			next.move_dist++;
+			next.move_time++;
+			runners[i] = next;
+			sum++;
+			
+			min_dist = min(min_dist, next.exit_dist); // 출구와의 최소거리 갱신
+		}
+		else
+		{
+			runners[i] = runner;
+			runners[i].move_time++;
+			
+			min_dist = min(min_dist, runner.exit_dist); // 출구와의 최소거리 갱신
+		}
+	}
 }
 
-//최선의 정사각형 기준 정렬
-bool Cmp(Position& A, Position& B) {
-    if (A.Size == B.Size)
-    {
-        if (A.x == B.x)
-        {
-            return A.y < B.y;
-        }
-        return A.x < B.x;
-    }
-    return A.Size < B.Size;
+Point make_square(int time)
+{
+	for (int i = 0; i < M; i++)
+	{
+		Point runner = runners[i];
+
+		// 출구와 최소거리만큼 떨어져 있으면 정사각형 후보군
+		if (runner.exit_dist == min_dist && runner.move_time == time + 1)
+		{
+			int y_gap = abs(Exit.y - runner.y);
+			int x_gap = abs(Exit.x - runner.x);
+			int size = max(y_gap, x_gap);
+
+			int max_y = max(Exit.y, runner.y) - size;
+			if (max_y < 1) max_y = 1;
+
+			int max_x = max(Exit.x, runner.x) - size;
+			if (max_x < 1) max_x = 1;
+
+			square.push_back({ max_y, max_x, 0, 0, size });
+		}
+	}
+
+	sort(square.begin(), square.end(), cmp);
+
+	return square[0];
 }
 
+void rotate(Point st)
+{
+	square_len = st.exit_dist;
+	Point end = { st.y + square_len, st.x + square_len };
+	string temp_map[11][11];
 
-// 각 참가자의 이동
-void Exit(Person& P) {
+	for (int i = 0; i <= square_len; i++)
+	{
+		for (int j = 0; j <= square_len; j++)
+		{
+			temp_map[st.y + j][st.x + square_len - i] = map[st.y + i][st.x + j];
+			
+			if (temp_map[st.y + j][st.x + square_len - i] >= "1" && temp_map[st.y + j][st.x + square_len - i] <= "9")
+			{
+				int num = stoi(temp_map[st.y + j][st.x + square_len - i]) - 1;
+				temp_map[st.y + j][st.x + square_len - i] = to_string(num);
+			}
+		}
+	}
 
-    int Curr = Dist_Exit(P.x, P.y);
+	for (int i = st.y; i <= st.y + square_len; i++)
+	{
+		for (int j = st.x; j <= st.x + square_len; j++)
+		{
+			map[i][j] = temp_map[i][j];
+		}
+	}
 
-    //자동 상, 하 우선 탐색
-    for (int i = 0; i < 4; i++)
-    {
-        int nx = P.x + dx[i];
-        int ny = P.y + dy[i];
-        int Next = Dist_Exit(nx, ny);
+	for (int i = 0; i < M; i++)
+	{
+		Point runner = runners[i];
 
-        if (nx < 1 || ny < 1 || nx > N || ny > N) continue; //범위 초과
-        if (Curr <= Next) continue;                         //이전보다 가까워져야한다.
-        if (Map[nx][ny] > 0) continue;                      //빈칸이 아닌 경우 이동 불가.
+		// 회전하는 사각형 범위 내에 있는 참가자 좌표 회전
+		if ((runner.y >= st.y && runner.y <= end.y) && (runner.x >= st.x && runner.x <= end.x))
+		{
+			int ny, nx;
+			int y_to_start = runner.y - st.y;
+			nx = end.x - y_to_start;
 
-        Ans++;
-        P.x = nx;   //x 좌표 변경
-        P.y = ny;   //y 좌표 변경
-        break;
-    }
+			int x_to_start = runner.x - st.x;
+			ny = st.y + x_to_start;
 
+			runner.y = ny;
+			runner.x = nx;
+
+			runners[i] = runner;
+		}
+	}
+	// 출구 회전
+	int ny, nx;
+	int y_to_start = Exit.y - st.y;
+	nx = end.x - y_to_start;
+
+	int x_to_start = Exit.x - st.x;
+	ny = st.y + x_to_start;
+
+	Exit.y = ny;
+	Exit.x = nx;
 }
 
-//정사각형 정보 생성
-void Square_Data(int x, int y) {
-    int x_Gap = abs(x - Ex);
-    int y_Gap = abs(y - Ey);
+int cal()
+{
+	int sum = 0;
 
-    int Size = max(x_Gap, y_Gap);
+	for (int i = 0; i < M; i++)
+	{
+		sum += runners[i].move_dist;
+	}
 
-    int mx = max(Ex, x) - Size;
-    if (mx < 1) mx = 1;
 
-    int my = max(Ey, y) - Size;
-    if (my < 1) my = 1;
-
-    Data.push_back({ mx, my, Size });
+	return sum;
 }
 
+void solution()
+{
+	runner_cnt = M;
 
-//사각형을 시계 방향으로 90도 회전한다.
-void Rotation(int x, int y, int Size) {
+	for (int i = 0; i < K; i++)
+	{
+		move(i);
+		Point rot = make_square(i);
+		square.clear();
+		rotate(rot);
 
-    vector<pair<pair<int, int>, int>> Pair;
-    bool Flag = true; //출구 이동 여부
+		min_dist = 100;
 
-    for (int i = 0; i <= Size; i++)
-    {
-        for (int j = 0; j <= Size; j++)
-        {
-            //기존 좌표
-            int px = x + i;
-            int py = y + j;
+		if (runner_cnt == 0) break;
+	}
 
-            //전환 좌표
-            int nx = x + j;
-            int ny = y + Size - i;
-
-            //출구가 회전하는 경우
-            if (px == Ex && py == Ey && Flag == true)
-            {
-                Flag = false;
-                Ex = nx;
-                Ey = ny;
-            }
-
-            Pair.push_back({ {nx, ny}, Map[px][py] });
-        }
-    }
-
-    //기존 값을 새로운 좌표에 도입 + 벽 허물기
-    for (auto E : Pair)
-    {
-        int x = E.first.first;
-        int y = E.first.second;
-        int m = E.second;
-        if (m == 0)
-        {
-            Map[x][y] = 0;
-        }
-        else if (m > 0)
-        {
-            Map[x][y] = m - 1;
-        }
-    }
-
-    //참가자 회전
-    for (auto& E : Vector)
-    {
-  
-        if (E.x >= x && E.x <= x + Size)
-        {
-
-            if (E.y >= y && E.y <= y + Size)
-            {
-
-                int i = E.x - x;
-                int j = E.y - y;
-
-                E.x = x + j;
-                E.y = y + Size - i;
-
-            }
-        }
-    }
-
-
+	cout << sum << endl;
+	cout << Exit.y << " " << Exit.x << endl;
 }
 
 int main() {
-    Input();
-    while (K--)
-    {
+	//freopen("sample_input.txt", "r", stdin);
+	input();
 
-        for (int i = 0; i < Vector.size(); i++)
-        {
-            Exit(Vector[i]);
-
-            if (Vector[i].x == Ex && Vector[i].y == Ey)
-            {
-                Vector.erase(Vector.begin() + i);
-                i--;
-                continue;
-            }
-
-            Square_Data(Vector[i].x, Vector[i].y);
-        }
-
-
-        if (Vector.size() == 0) break;
-
-
-        sort(Data.begin(), Data.end(), Cmp);
-        Rotation(Data[0].x, Data[0].y, Data[0].Size);
-        Data.clear();
-
-    }
-
-    cout << Ans << '\n';
-    cout << Ex << ' ' << Ey << '\n';
+	solution();
 }
